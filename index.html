@@ -352,7 +352,7 @@
 
 <div id="heartField"></div>
 
-<audio id="audio" autoplay loop>
+<audio id="audio" loop preload="auto">
   <source src="./Tu Hai To Dil Dhadakta Hai.mp3" type="audio/mpeg" />
 </audio>
 
@@ -362,8 +362,8 @@
     <h2>Nikita Tank</h2>
     <p>sent you a request</p>
     <div class="buttons">
-      <button class="ignore">Ignore</button>
-      <button class="accept">Accept</button>
+      <button class="ignore" onclick="ignoreRequest()">Ignore</button>
+      <button class="accept" onclick="acceptRequest()">Accept</button>
     </div>
   </div>
 </div>
@@ -426,11 +426,13 @@
   }
 
   function acceptRequest(){
-    clearTimeout(autoAcceptTimer);
     const btn = document.querySelector(".accept");
     if(btn.disabled) return; // already accepted
     btn.innerHTML = "✔ Accepted";
     btn.disabled = true;
+
+    const audio = document.getElementById("audio");
+    audio.play().catch(err => console.warn("Audio play blocked:", err.message));
 
     setTimeout(()=>{
       document.getElementById("requestScreen").style.display = "none";
@@ -440,7 +442,21 @@
   }
 
   /* auto-accept the request after a short delay */
-  const autoAcceptTimer = setTimeout(acceptRequest, AUTO_ACCEPT_SECONDS * 1000);
+  // const autoAcceptTimer = setTimeout(acceptRequest, AUTO_ACCEPT_SECONDS * 1000);
+
+  /* if acceptRequest fires from the timer (no real click yet), audio.play()
+     will be blocked by the browser. Catch the first real tap/click anywhere
+     on the page and use it to (re)start audio if it isn't already playing. */
+  function primeAudioOnce(){
+    const audio = document.getElementById("audio");
+    if(audio.paused){
+      audio.play().catch(()=>{});
+    }
+    document.removeEventListener("click", primeAudioOnce);
+    document.removeEventListener("touchstart", primeAudioOnce);
+  }
+  document.addEventListener("click", primeAudioOnce);
+  document.addEventListener("touchstart", primeAudioOnce);
 
   /* ---------- conversation loading ---------- */
   let conversation = [];
